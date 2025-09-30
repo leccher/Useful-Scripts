@@ -12,36 +12,50 @@ function Resolve-EnvVaraibleRecursive {
 	$envVarValue = [System.Environment]::GetEnvironmentVariable($envVarName)
 	if ($envVarValue) {
 		if ($debugEnabled) {
-		Write-Host -NoNewLine "With value:" -ForegroundColor Red
-		Write-Host $envVarValue
+			Write-Host -NoNewLine "With value:" -ForegroundColor Red
+			Write-Host $envVarValue
 		}
 	} else {
 		if ($debugEnabled) {
-		Write-Output -NoNewLine "ERROR 1:"
-		Write-Output $nuVarValue " is not defined"
+			Write-Output -NoNewLine "ERROR 1:"
+			Write-Output $nuVarValue " is not defined"
 		}
 		return @{Code=-1;Value="Error " + $nuVarValue + " not defined"}
 	}
 	$envVars = [regex]::Matches($envVarValue, '%(\w+)%')
 	if ($envVars.Count -gt 0) {
 		if ($debugEnabled) {
-		Write-Host -NoNewLine "Having inside:"  -ForegroundColor Red
-		Write-Host $envVars
+			Write-Host -NoNewLine "Having inside:"  -ForegroundColor Red
+			Write-Host $envVars
 		}
 	}
-	foreach ($envVar in $envVars) {
-		$nuVarValue = Resolve-EnvVaraibleRecursive($envVar.Groups[1].Value)
+	# Get only unique values
+	$uniEnvVars = $envVars | ForEach-Object { $_.Groups[1].Value } | Select-object -Unique
+	if ($uniEnvVars.Count -gt 0) {
+		if ($debugEnabled) {
+			Write-Host -NoNewLine "Unique values:"  -ForegroundColor Red
+			Write-Host $uniEnvVars
+		}
+	}
+	foreach ($envVar in $uniEnvVars) {
+		$nuVarValue = Resolve-EnvVaraibleRecursive($envVar)
 		if ($nuVarValue.Code -lt 0) {
 			continue
 		}
 		if ($debugEnabled) {
-		Write-Host -NoNewLine "Value returned:" -ForegroundColor Red
-		Write-Host $nuVarValue
+			Write-Host -NoNewLine "Value returned:" -ForegroundColor Red
+			Write-Host $nuVarValue
 		}
-		# Replacing %VAR_NAME% con var_value in envVarValue
-		$envVarValue = $envVarValue.Replace("%" + $envVar.Value + "%", $nuVarValue)
+		$ov=$envVar
+		$nv=$nuVarValue.Value
+		if ($debugEnabled) {
+			Write-Host "Replacing %$ov% con $nv in $envVarValue"
+		}
+		$envVarValue = $envVarValue.Replace("%" + $ov + "%", $nv)
+		if ($debugEnabled) {
+			Write-Host $envVarValue
+		}
 	}
-	
 	return @{Code=0;Value=$envVarValue}
 }
 
@@ -54,6 +68,8 @@ function Resolve-EnvVaraibleRecursive-Wrapper {
 	if ($result.Code -ne 0) {
 		Write-Host -noNeLine "Warning: "
 		Write-Host $result.Value
+	}else{
+		Set-Item -Path "Env:$envVarName" -Value $result.Value
 	}
 }
 
