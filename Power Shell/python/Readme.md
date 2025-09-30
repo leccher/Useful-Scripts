@@ -1,11 +1,11 @@
 # Power Shell useful functions to manage python installations
 
-This script contains some functions that could be useful for a python developer in a windows OS.
-It helps manages different python versions installed in windows enabling the desired, creating venv with desired one and so on.
+This script contains some functions that could be useful for a python developer in Windows.
+It helps to manage different python versions installed in Windows enabling the desired, creating venv with desired one and so on.
 
 
 ## Requirements
-The script requirea you have installed the python and pip versions you use and that you add some varables i your windows environment:
+The script requirea you have installed the python and pip versions you use and that you add some varables in your Windows environment:
 
 * PYTHON_HOME_version1 = "C:\path\to\python\v1"
 * PYTHON_HOME_version2 = "C:\path\to\python\v2"
@@ -13,7 +13,7 @@ The script requirea you have installed the python and pip versions you use and t
 
 version1, version2, ... should be in form 3_13, 3_11, ...
 
-In PATH variable just add %PYTHON_HOME% and if you enable 'Windows Recursive Environment Variable Resolver module"|https://github.com/leccher/PowerShellScript---Windows-Recursive-Environment-Variables-Resolver
+In PATH variable just add %PYTHON_HOME% and if you enable 'Windows Recursive Environment Variable Resolver module"|https://github.com/leccher/Useful-Scripts/Power-Shell/environment/Windows-Recursive-Environment-Variables-Resolver
 you have the desired version as enabled in windows.
 
 # Script functions
