@@ -10,19 +10,47 @@ The most important thing to know is those are not compatible one with the other.
 
 This rrepository contains only scripts for **PowerSehll** that are in my opinion useful for a developer using Windows shell.
 
-# Compress scripts
+## Compress scripts
 In this folder you can find scripts usefull to pack and unpack files in a folder.
 
-# Curl
+## Curl
 Here there is a script that help you to call a remote endpoint sending post data too.
 
-# Environment
+## Environment
 Here there is a script to recursive solve windows environment variables that otherway are solved just at first level.
 
-# Logger
+## Logger
 A script that let you use a common logging level management for your script.
 
-# Python
+## Python utilities
 Some scripts to help you browsing in Windows your folders and enabling, if there are, the desired python virtual environment, 
 jupyter lab if inside and changing system python version if installed. You can create a specific python virtual enviroment version
 if you have it installed in your system.
+
+# Powerhell integration
+For integrating scripts inside powershell session, you can check which is the value of %PROFILE% and in that file, after adding reference to the script file you want integrate, you can choose 2 ways:
+* override Set-Location function
+```PowerShell
+function Set-Location {
+    param (
+        [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("Path")]
+        [string]$LiteralPath
+    )
+    try {
+		# Usa il comando originale per cambiare directory
+		Microsoft.PowerShell.Management\Set-Location -LiteralPath $LiteralPath -ErrorAction Stop
+		if($env:DISABLE_CUSTOM_FUNCTION_FOR_DIRECTORY_WALKING){
+			# Cancella la variabile di ambiente
+			Remove-Item env:DISABLE_CUSTOM_FUNCTION_FOR_DIRECTORY_WALKING
+		}else{
+			# Chiama la funzione per monitorare il cambiamento
+			Enable-PythonVirtualEnviroment-AndJupyter
+		}
+	} catch {
+		Write-Host "Folder not found $LiteralPath"
+		return ${Code=-1;Value="Folder $LiteralPath not exists"}
+	}
+}
+```
+* override "prompt" function
