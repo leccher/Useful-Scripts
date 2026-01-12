@@ -5,7 +5,7 @@
 # "SilentlyContinue"	Default. No messages showed.
 # "Continue"	Debug messages showed in console
 # "Stop"	PowerShell stops execution meeting Write-Debug.
-# "Inquire"	PowerShell user in put before continue.
+# "Inquire"	PowerShell user input before continue.
 
 $Global:LogLevel = "INFO"
 

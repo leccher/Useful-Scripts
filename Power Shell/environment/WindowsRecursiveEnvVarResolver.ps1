@@ -1,4 +1,4 @@
-function Resolve-EnvVaraibleRecursive {
+function Resolve-EnvVariableRecursive {
 	param (
 		[Parameter(Mandatory=$true)]
 		[string]$envVarName
@@ -38,7 +38,7 @@ function Resolve-EnvVaraibleRecursive {
 		}
 	}
 	foreach ($envVar in $uniEnvVars) {
-		$nuVarValue = Resolve-EnvVaraibleRecursive($envVar)
+		$nuVarValue = Resolve-EnvVariableRecursive($envVar)
 		if ($nuVarValue.Code -lt 0) {
 			continue
 		}
@@ -59,12 +59,12 @@ function Resolve-EnvVaraibleRecursive {
 	return @{Code=0;Value=$envVarValue}
 }
 
-function Resolve-EnvVaraibleRecursive-Wrapper {
+function Resolve-EnvVariableRecursive-Wrapper {
 	param (
 		[Parameter(Mandatory=$true)]
 		[string]$envVarName
 	)
-	$result = Resolve-EnvVaraibleRecursive($envVarName)
+	$result = Resolve-EnvVariableRecursive($envVarName)
 	if ($result.Code -ne 0) {
 		Write-Host -noNeLine "Warning: "
 		Write-Host $result.Value
@@ -73,15 +73,15 @@ function Resolve-EnvVaraibleRecursive-Wrapper {
 	}
 }
 
-function Resolve-EnvVaraibleRecursive-Module-Help {
+function Resolve-EnvVariableRecursive-Module-Help {
 	Write-Host "Resolve Windows Environmbent Varaible module"
 	Write-Host "This module resolves recursively the variables inside windows envromment."
 	Write-Host "This aims to refer to a value in a variable inside another variable and so on deeply."
 	Write-Host ""
 	Write-Host "Usage:"
-	Write-Host 'Resolve-EnvVaraibleRecursive("PATH")'
+	Write-Host 'Resolve-EnvVariableRecursive("PATH")'
 	Write-Host "To have no results but just using the function"
-	Write-Host 'Resolve-EnvVaraibleRecursive-Wrapper("PATH")'
+	Write-Host 'Resolve-EnvVariableRecursive-Wrapper("PATH")'
 }
 
-Write-Host "Module Windows Recursive Variable Enviroment Resolver enabled (see Resolve-EnvVaraibleRecursive-Module-Help for usage)"
+Write-Host "Module Windows Recursive Variable Enviroment Resolver enabled (see Resolve-EnvVariableRecursive-Module-Help for usage)"
