@@ -62,9 +62,11 @@ function fixPath{
 
 # Just write enabled python version
 function getCurrentPythonVersion{
-	$pythonVersion = python --version 2>&1
-	Write-Host "Current python version is ${pythonVersion}"
-	return $pythonVersion
+	$rawVersion = python --version 2>&1 | Out-String
+	$cleanVersion = ($rawVersion -replace "Python", "").Trim()
+    
+    Write-Host "Current python version is ${cleanVersion}"
+    return $cleanVersion
 }
 
 # If python reference in environment variables are well formed, it enable the desired python version
@@ -236,7 +238,7 @@ function enablePythonVenv{
 }
 
 # This funciton enable if exists a vevn in the current folder
-function Enable-PythonVirtualEnviroment {
+function Enable-PythonVirtualEnvironment {
 	if ($Env:TERM_PROGRAM -eq "vscode") {
 		# This script is executed inside vscode.
 		return @{Code=0;Value="Inside vscode"}
@@ -291,8 +293,8 @@ function Enable-PythonVirtualEnviroment {
 	return @{Code=0;Value="No folder for $selectedVenvName"}
 }
 # This is just a wrapeer that does not provide return
-function Enable-PythonVirtualEnviroment-Wrapper {
-	$result = Enable-PythonVirtualEnviroment
+function Enable-PythonVirtualEnvironment-Wrapper {
+	$result = Enable-PythonVirtualEnvironment
 }
 
 # This funciton enable if exists a kupyter in a provided vevn folder
@@ -321,7 +323,7 @@ function Enable-JupyterLab-Wrapper {
 	)
 	$result = Enable-JupyterLab($venvFolder)
 }
-# This funciton berge actions by two functions
+# This funciton merge actions by two functions
 function Enable-PythonVirtualEnviroment-AndJupyter {
 	if ($Env:TERM_PROGRAM -eq "vscode") {
 		# This script is executed inside vscode.
@@ -372,6 +374,7 @@ if(($available_functions.ContainsKey($Function))){
 			& setPythonVenv -Version $Version -Name $Name
 		}
 		"load" {
+			Write-Host "Loaded script: $($MyInvocation.MyCommand.Name)"
 			exit 0
 		}
 		default {
@@ -383,4 +386,15 @@ if(($available_functions.ContainsKey($Function))){
 	usageThisScript
 }
 
-Write-Host "Module Python Utils loaded"
+function pythonUsefulFunctions{
+	param(
+		[Parameter(Position=0)]
+		[string]$Function,
+		
+		[Parameter(Position=1)]
+		[string]$Version,
+		
+		[Parameter(Position=2)]
+		[string]$Name
+	)
+}

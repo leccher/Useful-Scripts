@@ -1,30 +1,30 @@
 # Parameters
 param (
-	[string]$method,        # HTTP method used
-    [string]$json,  # JSON file path
-    [string]$apiUrl         # Te url to api
+	[string]$method, 	# HTTP method used
+    [string]$json,  	# JSON file path
+    [string]$apiUrl 	# Te url to api
 )
 
 # help
 function Show-Help {
-    Write-Host "Uso del comando:"
+    Write-Host "Script usage:"
     Write-Host "  .\mycurl.ps1 -method <GET|POST> -jsonFilePath <path_to_json_file> -apiUrl <api_url>"
     Write-Host ""
-    Write-Host "Descrizione:"
-    Write-Host "  Questo script invia un file JSON a un URL specificato tramite una richiesta POST."
+    Write-Host "Description:"
+    Write-Host "  This script send a JSON to a destination URL using a POST request."
     Write-Host ""
-    Write-Host "Parametri:"
-	Write-Host "  -help   : Mostra questo metodo"
-	Write-Host "  -method : Metodo usato"
-    Write-Host "  -json	  : Percorso del file JSON da inviare o stringa json (obbligatorio)"
-    Write-Host "  -apiUrl : URL del servizio web a cui inviare la richiesta (obbligatorio)"
+    Write-Host "Params:"
+	Write-Host "  -help   : Show this help"
+	Write-Host "  -method : Used method"
+    Write-Host "  -json	  : Path to file to sand or a json string (needed)"
+    Write-Host "  -apiUrl : URL of web service to send the message to (needed)"
     Write-Host ""
     Write-Host "Esempio di utilizzo:"
     Write-Host "  .\mycurl.ps1  -method <GET|POST> -jsonFilePath 'C:\path\to\your\data.json' -apiUrl 'http://localhost:8000/atlantis/relatedrisks/'"
 }
 
 if ($method -eq "help") {
-    Write-Host "Errore: Il parametro -apiUrl è obbligatorio."
+    Write-Host "Error: -apiUrl parameter is needed."
     Show-Help
     exit 0
 }
@@ -35,7 +35,7 @@ $getmethods = @("GET", "HEAD", "OPTIONS", "TRACE")
 $postmethods = @("PUT", "POST", "DELETE", "PATCH")
 # I need apiUrl
 if (-not $apiUrl) {
-    Write-Host "Errore: Il parametro -apiUrl è obbligatorio."
+    Write-Host "Error: -apiUrl parameter is needed."
     Show-Help
     exit -1
 }

@@ -19,7 +19,7 @@ The script is used to resolve this limit.
 Download the script (eg, C:\Users\MyUser\Scripts\wervr.ps1) and make it to be used when you create 
 a new instance of PowerShell itself, or if you use Terminal, add it to its configuration file.
 
-```PowerShell
+```PowerShell 
 . C:\Users\MyUser\Scripts\wervr.ps1
 $res = Resolve-EnvVaraibleRecursive("PATH")
 if ($res.Code -ne 0) {
