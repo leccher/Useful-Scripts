@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# ==============================================================================
+# Bash Profile Configuration (Porting from PowerShell)
+# ==============================================================================
+
+# 1. Controllo Privilegi (Simile a IsInRole Administrator)
+if [ "$EUID" -eq 0 ]; then
+    # echo "Executing as ROOT"
+    return
+fi
+
+# 2. Configurazione PATH
+export MY_SCRIPTS="$HOME/Scripts"
+if [[ :$PATH: != *:"$MY_SCRIPTS":* ]]; then
+    export PATH="$PATH:$MY_SCRIPTS"
+fi
+
+# Variabile di stato
+MY_MODULES_LOADED=false
+
+# 3. Funzione Caricamento Moduli (Source di tutti i .sh nella cartella modules)
+load_my_modules() {
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local modules_folder="$script_dir/modules"
+    
+    echo -e "\e[36mLoading modules from: $modules_folder ...\e[0m"
+
+    if [ -d "$modules_folder" ]; then
+        # Cerca tutti i file .sh ricorsivamente
+        for module in $(find "$modules_folder" -name "*.sh"); do
+            echo -e "\e[35mLoading ... $(basename "$module")\e[0m"
+            source "$module"
+        done
+        
+        # Risoluzione ricorsiva del PATH (usando la funzione convertita in precedenza)
+        if command -v resolve_and_export &> /dev/null; then
+            resolve_and_export "PATH"
+        fi
+        
+        MY_MODULES_LOADED=true
+        return 0
+    else
+        echo -e "\e[33mFolder not found: $modules_folder\e[0m"
+        return 1
+    fi
+}
+
+# 4. Funzione Scaricamento (In Bash basta 'unset' le funzioni, ma è meno comune)
+unload_my_modules() {
+    echo -e "\e[33mNote: In Bash, unloading requires manual unsetting of functions.\e[0m"
+    MY_MODULES_LOADED=false
+}
+
+# Esecuzione caricamento all'avvio
+load_my_modules
+
+# 5. Gestione del Cambio Directory (L'equivalente del tuo override di Set-Location)
+# In Bash usiamo PROMPT_COMMAND che viene eseguito ogni volta prima di mostrare il prompt
+last_pwd=$(pwd)
+
+directory_watcher() {
+    local current_pwd=$(pwd)
+    
+    if [ "$current_pwd" != "$last_pwd" ]; then
+        last_pwd=$current_pwd
+        
+        # Se i moduli sono carichi, esegui il check del Venv/Jupyter
+        if [ "$MY_MODULES_LOADED" = true ]; then
+            if command -v enable_venv_and_jupyter &> /dev/null; then
+                # Eseguiamo in background o silenziosamente per non bloccare la shell
+                enable_venv_and_jupyter
+            fi
+        fi
+    fi
+}
+
+# 6. Definizione del Prompt
+# PS1 definisce l'aspetto visivo
+export PS1="\[\e[36m\]PS \w> \[\e[0m\]"
+
+# PROMPT_COMMAND esegue la funzione directory_watcher a ogni invio
+export PROMPT_COMMAND="directory_watcher"
