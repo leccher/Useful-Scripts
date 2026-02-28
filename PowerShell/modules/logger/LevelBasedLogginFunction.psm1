@@ -23,6 +23,7 @@ $Global:LogFilePath = "$env:USERPROFILE\ps_scripts_log.txt"
 
 function Write-Log {
     param (
+		[Parameter(Mandatory=$true)]
         [string]$Message,
         [ValidateSet("DEBUG", "INFO", "WARN", "ERROR")]
         [string]$Level = "INFO"
@@ -32,14 +33,55 @@ function Write-Log {
     $formatted = "[$timestamp][$Level] $Message"
 
 	if ($LogLevels[$Level] -ge $LogLevels[$LogLevel]) {
-        Write-Debug $formatted
+        Write-Debug $formatted -foregroundColor Magenta
 		if ($LogToFile) {
 			Add-Content -Path $LogFilePath -Value $formatted
 		}
     }
 }
 
-function Write-Log-Module-Help {
+function Enable-LogToFile {
+    param (
+        [Parameter(Mandatory=$false)]
+        [string]$file
+    )
+
+    # Se viene fornito un file, aggiorna il percorso
+    if ($file) {
+        Set-LogFilePath $file
+    }
+
+    # Se il percorso globale è ancora vuoto (non era stato passato né prima né ora), avvisa ed esci
+    if (-not $Global:LogFilePath) {
+        Write-Warning "Log file path needed. Call Enable-LogToFile 'path-to-file'"
+        return # Non attivare il log se non c'è un percorso
+    }
+
+    $Global:LogToFile = $true
+    Write-Host "Logging to file abilitato: $($Global:LogFilePath)"
+}
+
+function Disable-LogToFile {
+    $Global:LogToFile = $false
+}
+
+function Set-LogFilePath {
+	param (
+        [Parameter(Mandatory=$true)]
+        [string]$file       
+    )
+	$Global:LogFilePath=$file
+}
+
+function Set-LogLevel {
+	param (
+        [ValidateSet("DEBUG", "INFO", "WARN", "ERROR")]
+        [string]$Level = "INFO"
+    )
+	$Global:LogLevel=$Level
+}
+
+function Show-WriteLogHelp {
 	Write-Host "Write-Log for PowerShell module"
 	Write-Host "This module implements Write-Log function."
 	Write-Host 'Possilbe levels are: "DEBUG", "INFO", "WARN", "ERROR"'
@@ -54,4 +96,4 @@ function Write-Log-Module-Help {
 	Write-Host "LogPathFile = \$env:USERPROFILE\ps_scripts_log.txt"
 }
 
-Write-Host 'Module WriteLog for PowerShell enabled (see Write-Log-Module-Help for usage)'
+Export-ModuleMember -Function Show-WriteLogHelp, Write-Log, Set-LogFilePath, Enable-LogToFile, Disable-LogToFile
