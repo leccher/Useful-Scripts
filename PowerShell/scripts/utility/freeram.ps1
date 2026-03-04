@@ -58,11 +58,11 @@ $allExclusions = ($defaultExclusions + $Exclude) | Select-Object -Unique
 
 $results = [System.Collections.Generic.List[pscustomobject]]::new()
 
-Write-Host "=== Free-RAM: started at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') ===" -ForegroundColor Cyan
+Write-Host "=== Free-RAM: started at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') ===" -foregroundColor Cyan
 
 # 1) Trim working sets (optional)
 if ($TrimWorkingSets) {
-    Write-Host "`n[1/2] Trimming process working sets..." -ForegroundColor Yellow
+    Write-Host "`n[1/2] Trimming process working sets..." -foregroundColor Yellow
     $procs = Get-Process | Where-Object {
         $_.Name -notin $allExclusions -and $_.Id -ne $PID -and $_.Handle -ne $null
     }
@@ -96,12 +96,12 @@ if ($TrimWorkingSets) {
 
     $freedTotal = ($results | Where-Object {$_.FreedMB} | Measure-Object FreedMB -Sum).Sum
     if (-not $freedTotal) { $freedTotal = 0 }
-    Write-Host ("  -> Estimated physical memory freed: {0} MB" -f [Math]::Round($freedTotal,2)) -ForegroundColor Green
+    Write-Host ("  -> Estimated physical memory freed: {0} MB" -f [Math]::Round($freedTotal,2)) -foregroundColor Green
 }
 
 # 2) Clear Standby List (if specified)
 if ($ClearStandbyListPath) {
-    Write-Host "`n[2/2] Clearing Standby List..." -ForegroundColor Yellow
+    Write-Host "`n[2/2] Clearing Standby List..." -foregroundColor Yellow
 
     if (-not (Test-Path $ClearStandbyListPath)) {
         Write-Warning "Invalid path: $ClearStandbyListPath"
@@ -114,7 +114,7 @@ if ($ClearStandbyListPath) {
             & $ClearStandbyListPath "standbylist" | Out-Null
             Start-Sleep -Seconds 1
             & $ClearStandbyListPath "modifiedpagelist" | Out-Null
-            Write-Host "  -> Standby List cleared." -ForegroundColor Green
+            Write-Host "  -> Standby List cleared." -foregroundColor Green
         }
         catch {
             Write-Warning "Failed to execute EmptyStandbyList.exe: $($_.Exception.Message)"
@@ -127,4 +127,4 @@ if ($results.Count -gt 0) {
     $results | Format-Table -AutoSize
 }
 
-Write-Host "`nCompleted!" -ForegroundColor Cyan
+Write-Host "`nCompleted!" -foregroundColor Cyan

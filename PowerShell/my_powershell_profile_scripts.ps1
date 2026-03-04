@@ -2,8 +2,8 @@
 # See $PROFILE | Select-Object *
 # AllUsersAllHosts       : C:\Program Files\PowerShell\7\profile.ps1
 # AllUsersCurrentHost    : C:\Program Files\PowerShell\7\Microsoft.PowerShell_profile.ps1
-# CurrentUserAllHosts    : C:\Users\cripergine\Documents\PowerShell\profile.ps1
-# CurrentUserCurrentHost : C:\Users\cripergine\Documents\PowerShell\Microsoft.PowerShell_profile.ps1
+# CurrentUserAllHosts    : C:\Users\YOUR_USER\Documents\PowerShell\profile.ps1
+# CurrentUserCurrentHost : C:\Users\YOUR_USER\Documents\PowerShell\Microsoft.PowerShell_profile.ps1
 
 # For creating CurrentUser files
 # New-Item -ItemType File -Path $PROFILE -Force
@@ -23,54 +23,75 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
 $env:MY_SCRIPTS = Join-Path $env:USERPROFILE '\Scripts'
 $env:PATH += ";$env:MY_SCRIPTS"
 $script:myModulesLoaded=$false
+
+function Get-CurrentScriptDir {
+	# Works in PS 3.0+, handles interactive sessions gracefully
+	$scriptPath = if ($PSCommandPath) {
+		$PSCommandPath
+	} elseif ($MyInvocation.MyCommand.Path) {
+		$MyInvocation.MyCommand.Path
+	} else {
+		$null
+	}
+
+	$CurrentScriptDir = if ($scriptPath) {
+		Split-Path -Parent $scriptPath
+	} else {
+		# Decide what you want in interactive sessions:
+		# Option A: use the current directory
+		(Get-Location).Path
+
+		# Option B (stricter): fail fast with a clear message
+		# throw "This code must be run from a script file; no script path available in interactive session."
+	}
+	return $CurrentScriptDir
+}
 function Load-MyPowerShellModules {
 	# Useful Scripts PowerShell section
-	$CurrentScriptDir = Split-Path -Parent $PSCommandPath
-	$useful_scripts_folder=$CurrentScriptDir
+	$useful_scripts_folder=Get-CurrentScriptDir
 	$useful_scripts_poweshell_modules_folder="$useful_scripts_folder\modules"
 	Write-Host "Loading modules from: $useful_scripts_poweshell_modules_folder ..." -foregroundColor Cyan
-	if (Test-Path $useful_scripts_poweshell_modules_folder) {
+	if (Test-Path "$useful_scripts_poweshell_modules_folder") {
 		#$env:PSModulePath += ";$useful_scripts_poweshell_modules_folder"
-		Get-ChildItem -Filter "*.psd1" -Recurse -File | ForEach-Object { 
-			Write-Host "Loading ... $($_.Name)" -ForegroundColor Magenta
+		Get-ChildItem -Path "$useful_scripts_poweshell_modules_folder" -Filter "*.psd1" -Recurse -File | ForEach-Object { 
+			Write-Host "Loading ... $($_.Name)" -foregroundColor Magenta
 			Import-Module $_.FullName -Force 
 		}
 	}
 	else {
 		$message="Folder not found : $useful_scripts_folder"
-		Write-Host $message -foregroundColor Yellow
+		Write-Host "$message" -foregroundColor Yellow
 		return @{
 			Code=-2
 			Value=$false
-			Message=$message
+			Message="$message"
 		}
 	}
 	$message="My Modules Loaded!!!"
-	Write-Host $message -foregroundColor Cyan
-	try {
-		Resolve-MEMMRecursiveVariable("PATH")
-	}
-	catch {
-		$message = "Modules not loaded"
-		Write-Host $message -foregroundColor Yellow
-		return @{
-			Code=-3
-			Value=$false
-			Message=$message
-		}
-	}
+	Write-Host "$message" -foregroundColor Cyan
+	#try {
+		Resolve-MEMMRecursiveVariable "PATH"
+	#}
+	#catch {
+	#	$message = "Modules not loaded"
+	#	Write-Host "$message" -foregroundColor Yellow
+	#	return @{
+	#		Code=-3
+	#		Value=$false
+	#		Message="$message"
+	#	}
+	#}
 	$script:myModulesLoaded=$true
 	return @{
 		Code=1
 		Value=$true
-		Message=$message
+		Message="$message"
 	}
 }
 
 function Unload-MyPowerShellModules {
 	# Useful Scripts PowerShell section
-	$CurrentScriptDir = Split-Path -Parent $PSCommandPath
-	$useful_scripts_folder=$CurrentScriptDir
+	$useful_scripts_folder=Get-CurrentScriptDir
 	$useful_scripts_poweshell_modules_folder="$useful_scripts_folder\modules"
 	Write-Host "Loading modules from: $useful_scripts_poweshell_modules_folder ..." -foregroundColor Cyan
 	if (Test-Path $useful_scripts_poweshell_modules_folder) {
@@ -82,21 +103,20 @@ function Unload-MyPowerShellModules {
 	}
 	else {
 		$message="Folder not found : $useful_scripts_folder"
-		Write-Error $message -foregroundColor Yellow
+		Write-Error "$message" -foregroundColor Yellow
 		return @{
 			Code=-1
 			Value=$false
-			Message=$message
+			Message="$message"
 		}
 	}
 	$script:myModulesLoaded=$true
 	return @{
 		Code=1
 		Value=$true
-		Message=$message
+		Message="$message"
 	}
 }
-
 $script:result = Load-MyPowerShellModules
 $script:myModulesLoaded = $script:result.Value
 

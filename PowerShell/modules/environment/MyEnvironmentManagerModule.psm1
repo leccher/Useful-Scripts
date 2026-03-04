@@ -2,7 +2,7 @@
 # Module: MEMM (Management Environment Modulo)
 # ==============================================================================
 
-$script:debugEnabled = $false
+$script:debugEnabled = $true
 
 function Resolve-EnvVariableRecursive {
     param (
@@ -11,18 +11,22 @@ function Resolve-EnvVariableRecursive {
     )
 
     if ($script:debugEnabled) {
-        Write-Host "[DEBUG] Analisi variabile: $envVarName" -ForegroundColor Yellow
+        Write-Host "[DEBUG] Analisi variabile: $envVarName" -foregroundColor Yellow
     }
 
     # Recupero il valore grezzo dalla memoria
     $envVarValue = [System.Environment]::GetEnvironmentVariable($envVarName)
 
     if (-not $envVarValue) {
-        return @{Code=-1; Value="Errore: Variabile '$envVarName' non definita"; Message="Not Found"}
+        return @{
+			Code=-1
+			Value="Errore: Variabile '$envVarName' non definita"
+			Message="Not Found"
+		}
     }
 
     if ($script:debugEnabled) {
-        Write-Host "[DEBUG] Valore trovato: $envVarValue" -ForegroundColor Gray
+        Write-Host "[DEBUG] Valore trovato: $envVarValue" -foregroundColor Gray
     }
 
     # Regex per trovare pattern %VARIABILE%
@@ -41,7 +45,7 @@ function Resolve-EnvVariableRecursive {
                 $newValue = $subResult.Value
                 
                 if ($script:debugEnabled) {
-                    Write-Host "[DEBUG] Sostituzione $oldValue -> $newValue" -ForegroundColor DarkGray
+                    Write-Host "[DEBUG] Sostituzione $oldValue -> $newValue" -foregroundColor DarkGray
                 }
                 $envVarValue = $envVarValue.Replace($oldValue, $newValue)
             }
@@ -65,7 +69,7 @@ function Resolve-MEMMRecursiveVariable {
         # AGGIORNAMENTO: Usiamo [System.Environment] per maggiore stabilità con variabili lunghe come PATH
         $envPath = "Env:$envVarName"
         Set-Item -Path $envPath -Value $result.Value
-        Write-Log "Variable '$envVarName' successfully resolved." -ForegroundColor Green
+        Write-Log "Variable '$envVarName' successfully resolved." 
     }
 }
 
@@ -75,11 +79,11 @@ function Set-MEMMDebug {
 		[bool]$debug
 	)
     $script:debugEnabled = $debug
-    Write-Host "Debug Mode: $script:debugEnabled" -ForegroundColor Cyan
+    Write-Host "Debug Mode: $script:debugEnabled" -foregroundColor Cyan
 }
 
 function Show-MEMMHelp {
-    Write-Host "`n--- My Environment Manager Module ---" -ForegroundColor Cyan
+    Write-Host "`n--- My Environment Manager Module ---" -foregroundColor Cyan
     Write-Host "Resolve recursively references among environment variables (eg. %VAR%)."
     Write-Host "`nAvailable commands:"
     Write-Host "  Resolve-MEMMRecursiveVariable 'NOME_VAR' : Resolve and apply to current session."

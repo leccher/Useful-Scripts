@@ -12,7 +12,7 @@ param(
     [string]$LogToFile = ""                         # Se valorizzato, salva anche su file (es. C:\Temp\EventMonitor.log)
 )
 
-Write-Host "🔎 Avvio monitoraggio del log '$LogName'..." -ForegroundColor Cyan
+Write-Host "🔎 Avvio monitoraggio del log '$LogName'..." -foregroundColor Cyan
 
 # Costruisci query XML per EventLogWatcher
 # Filtra per livelli (se specificati)
@@ -96,8 +96,8 @@ $action = {
     try { $msg = $record.FormatDescription() } catch { $msg = "(Nessuna descrizione disponibile)" }
 
     $header = "[{0}] {1} | ID {2} | Livello: {3}" -f $time, $prov, $id, $level
-    Write-Host $header -ForegroundColor Yellow
-    Write-Host ($msg) -ForegroundColor Gray
+    Write-Host $header -foregroundColor Yellow
+    Write-Host ($msg) -foregroundColor Gray
     Write-Host ("-"*80)
 
     Write-EventFile "$header`n$msg`n$('-'*80)"
@@ -110,8 +110,8 @@ $subscription = Register-ObjectEvent -InputObject $watcher -EventName EventRecor
 
 # Avvia
 $watcher.Enabled = $true
-Write-Host "✅ Monitoraggio attivo. Premi Ctrl+C per terminare." -ForegroundColor Green
-Write-Host "Suggerimento: per dispositivi, prova i provider: Kernel-PnP, UserPnp, USBHUB, BTHUSB, Bluetooth." -ForegroundColor DarkCyan
+Write-Host "✅ Monitoraggio attivo. Premi Ctrl+C per terminare." -foregroundColor Green
+Write-Host "Suggerimento: per dispositivi, prova i provider: Kernel-PnP, UserPnp, USBHUB, BTHUSB, Bluetooth." -foregroundColor DarkCyan
 Write-Host ("-"*80)
 
 # Attendi eventi
@@ -124,5 +124,5 @@ try {
     $watcher.Enabled = $false
     if ($subscription) { Unregister-Event -SourceIdentifier $subscription.Name }
     $watcher.Dispose()
-    Write-Host "🛑 Monitoraggio terminato." -ForegroundColor Red
+    Write-Host "🛑 Monitoraggio terminato." -foregroundColor Red
 }

@@ -28,27 +28,27 @@ function Fix-Path {
 
 function Get-CurrentPythonVersion {
     if ($script:debugEnebled) {
-        Write-Host "Called Fix-Path ..." -ForegroundColor yellow
+        Write-Host "Called Fix-Path ..." -foregroundColor yellow
     }
     try {
         $rawVersion = python --version 2>&1 | Out-String
         if ($script:debugEnebled) {
-            Write-Host $rawVersion -ForegroundColor yellow
+            Write-Host $rawVersion -foregroundColor yellow
         }        
         if ($rawVersion -match '(\d+\.\d+(\.\d+)?)') {
             if ($script:debugEnebled) {
-                Write-Host "It is in x.y.z format!" -ForegroundColor yellow
+                Write-Host "It is in x.y.z format!" -foregroundColor yellow
             }
             return @{ Code = 0; Value = $Matches[1]; Message = "Python attuale: $($Matches[1])" }
         }
         if ($script:debugEnebled) {
-            Write-Host "It is not in x.y.z format" -ForegroundColor yellow
+            Write-Host "It is not in x.y.z format" -foregroundColor yellow
         }
         return @{ Code = 1; Value = $null; Message = "Bad version format." }
     }
     catch {
         if ($script:debugEnebled) {
-            Write-Host "Python command not found in PATH." -ForegroundColor yellow
+            Write-Host "Python command not found in PATH." -foregroundColor yellow
         }
         return @{ Code = -1; Value = $null; Message = "Python command not found in PATH." }
     }
@@ -62,7 +62,7 @@ function Set-PythonVersion {
     $cv = Get-CurrentPythonVersion
     if ($Version -eq $cv.Value) {
 		if ($script:debugEnabled) {
-			Write-Host "$Version is the current active!!" -ForegroundColor Yellow
+			Write-Host "$Version is the current active!!" -foregroundColor Yellow
 		}
         return @{ Code = 0; Value = $Version; Message = "Versione $Version già attiva." }
     }
@@ -71,14 +71,14 @@ function Set-PythonVersion {
     $prefix = "PYTHON_HOME_"
     Get-ChildItem Env: | Where-Object { $_.Name -like "$prefix*" } | ForEach-Object {
 		if ($script:debugEnabled) {
-			Write-Host "Found $_" -ForegroundColor Yellow
+			Write-Host "Found $_" -foregroundColor Yellow
 		}
         $v = $_.Name.Substring($prefix.Length).Replace("_", ".")
         $pythonEnvPaths[$v] = $_.Value
     }
     if ($script:debugEnabled) {
-        Write-Host "Isolated:" -ForegroundColor Yellow
-        Write-Host "$pythonEnvPaths" -ForegroundColor Yellow
+        Write-Host "Isolated:" -foregroundColor Yellow
+        Write-Host "$pythonEnvPaths" -foregroundColor Yellow
     }
 
     if ($pythonEnvPaths.ContainsKey($Version)) {
@@ -95,8 +95,8 @@ function Set-PythonVersion {
     
     $available = ($pythonEnvPaths.Keys | Sort-Object) -join ", "
     if ($script:debugEnabled) {
-        Write-Host "Avaliables:" -ForegroundColor Yellow
-        Write-Host "$available" -ForegroundColor Yellow
+        Write-Host "Avaliables:" -foregroundColor Yellow
+        Write-Host "$available" -foregroundColor Yellow
     }
     return @{ Code = -1; Value = $null; Message = "Versione non supportata. Disponibili: $available" }
 }
@@ -117,7 +117,7 @@ function Create-PythonVenv {
     $venvName = if ($Name) { ".venv_${Version}_${Name}" } else { ".venv_$Version" }
 
     if (-not (Test-Path $venvName)) {
-        Write-Host "Creazione venv: $venvName..." -ForegroundColor Cyan
+        Write-Host "Creazione venv: $venvName..." -foregroundColor Cyan
         & python -m venv $venvName
     }
     return @{ Code = 0; Value = $venvName; Message = "Venv pronto: $venvName" }
@@ -129,7 +129,7 @@ function Get-PythonVenv {
     $folders = Get-ChildItem -Directory -Filter ".venv*"
     if (-not $folders) { return @{ Code = -1; Message = "Nessun venv trovato." } }
 
-    Write-Host "`nScegli l'ambiente virtuale:" -ForegroundColor Cyan
+    Write-Host "`nScegli l'ambiente virtuale:" -foregroundColor Cyan
     for ($i=0; $i -lt $folders.Count; $i++) {
         Write-Host "$($i+1). $($folders[$i].Name)"
     }
@@ -179,7 +179,7 @@ function Start-JupyterLab {
 function Enable-MPMVenv {
     param ([string]$Folder)
     $res = Enable-PythonVenv -Folder $Folder
-    if ($res.Code -eq 0) { Write-Host $res.Message -ForegroundColor Green }
+    if ($res.Code -eq 0) { Write-Host $res.Message -foregroundColor Green }
     else { Write-Warning $res.Message }
     return $res
 }
@@ -192,9 +192,9 @@ function Enable-MPMVenvAndJupyterLab {
 }
 
 function Show-MPMHelp {
-    Write-Host "`n--- Python Manager Module Help ---" -ForegroundColor Yellow
+    Write-Host "`n--- Python Manager Module Help ---" -foregroundColor Yellow
     $help_functions.GetEnumerator() | Sort-Object Name | ForEach-Object {
-        Write-Host "$($_.Name):" -NoNewline -ForegroundColor Cyan
+        Write-Host "$($_.Name):" -NoNewline -foregroundColor Cyan
         Write-Host " $($_.Value)"
     }
 }

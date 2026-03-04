@@ -26,5 +26,5 @@ function Add-ToStartup {
     $Shortcut.WorkingDirectory = Split-Path $ScriptPath
     $Shortcut.Save()
     
-    Write-Host "Shortcut creato in: $shortcutPath" -ForegroundColor Green
+    Write-Host "Shortcut creato in: $shortcutPath" -foregroundColor Green
 }

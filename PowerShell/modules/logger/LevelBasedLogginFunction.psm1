@@ -21,23 +21,146 @@ $Global:LogLevels = @{
 $Global:LogToFile = $false
 $Global:LogFilePath = "$env:USERPROFILE\ps_scripts_log.txt"
 
-function Write-Log {
-    param (
-		[Parameter(Mandatory=$true)]
+function Write-LogWIthDebug {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
         [string]$Message,
-        [ValidateSet("DEBUG", "INFO", "WARN", "ERROR")]
-        [string]$Level = "INFO"
+
+        [ValidateSet('DEBUG','INFO','WARN','ERROR')]
+        [string]$Level = 'INFO',
+
+        # Se vuoi poter colorare la console quando non scrivi su file
+        [switch]$ColorToConsole = $true
     )
-	
-	$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+    # Mappa livelli a priorità (se non già definite fuori)
+    if (-not $script:LogLevels) {
+        $script:LogLevels = @{
+            'DEBUG' = 10
+            'INFO'  = 20
+            'WARN'  = 30
+            'ERROR' = 40
+        }
+    }
+    if (-not $script:LogLevel) { $script:LogLevel = 'INFO' }           # livello minimo corrente
+    if (-not $script:LogToFile) { $script:LogToFile = $false }         # logging su file sì/no
+    if (-not $script:LogFilePath) { $script:LogFilePath = "$PWD\app.log" }
+
+    $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
     $formatted = "[$timestamp][$Level] $Message"
 
-	if ($LogLevels[$Level] -ge $LogLevels[$LogLevel]) {
-        Write-Debug $formatted -foregroundColor Magenta
-		if ($LogToFile) {
-			Add-Content -Path $LogFilePath -Value $formatted
-		}
+    # Filtra per livello
+    if ($script:LogLevels[$Level] -ge $script:LogLevels[$script:LogLevel]) {
+
+        # 1) Stream debug (senza colore: Write-Debug non lo supporta)
+        if ($Level -eq 'DEBUG') {
+            Write-Debug $formatted
+        }
+
+        # 2) Console colorata (facoltativa) con Write-Host
+        if ($ColorToConsole) {
+            $fg = switch ($Level) {
+                'DEBUG' { 'DarkGray' }
+                'INFO'  { 'White' }
+                'WARN'  { 'Yellow' }
+                'ERROR' { 'Red' }
+            }
+            Write-Host $formatted -ForegroundColor $fg
+        }
+
+        # 3) Log su file se abilitato
+        if ($script:LogToFile) {
+            $dir = Split-Path -Parent $script:LogFilePath
+            if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir | Out-Null }
+            Add-Content -Path $script:LogFilePath -Value $formatted
+        }
     }
+}
+
+function Write-LogWithoutDebug {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Message,
+        [ValidateSet('DEBUG','INFO','WARN','ERROR')]
+        [string]$Level = 'INFO'
+    )
+
+    if (-not $script:LogLevels) {
+        $script:LogLevels = @{ DEBUG=10; INFO=20; WARN=30; ERROR=40 }
+    }
+    if (-not $script:LogLevel) { $script:LogLevel = 'INFO' }
+    if (-not $script:LogToFile) { $script:LogToFile = $false }
+    if (-not $script:LogFilePath) { $script:LogFilePath = "$PWD\app.log" }
+
+    if ($script:LogLevels[$Level] -lt $script:LogLevels[$script:LogLevel]) { return }
+
+    $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    $formatted = "[$timestamp][$Level] $Message"
+
+    $fg = switch ($Level) {
+        'DEBUG' { 'DarkGray' }
+        'INFO'  { 'White' }
+        'WARN'  { 'Yellow' }
+        'ERROR' { 'Red' }
+    }
+
+    Write-Host $formatted -ForegroundColor $fg
+
+    if ($script:LogToFile) {
+        $dir = Split-Path -Parent $script:LogFilePath
+        if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir | Out-Null }
+        Add-Content -Path $script:LogFilePath -Value $formatted
+    }
+}
+
+function Write-LogWIthPSTyle {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Message,
+        [ValidateSet('DEBUG','INFO','WARN','ERROR')]
+        [string]$Level = 'INFO'
+    )
+
+    if (-not $script:LogLevels) {
+        $script:LogLevels = @{ DEBUG=10; INFO=20; WARN=30; ERROR=40 }
+    }
+    if (-not $script:LogLevel) { $script:LogLevel = 'INFO' }
+    if (-not $script:LogToFile) { $script:LogToFile = $false }
+    if (-not $script:LogFilePath) { $script:LogFilePath = "$PWD\app.log" }
+
+    if ($script:LogLevels[$Level] -lt $script:LogLevels[$script:LogLevel]) { return }
+
+    $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    $formatted = "[$timestamp][$Level] $Message"
+
+    $color = switch ($Level) {
+        'DEBUG' { $PSStyle.Foreground.BrightBlack }
+        'INFO'  { $PSStyle.Foreground.White }
+        'WARN'  { $PSStyle.Foreground.Yellow }
+        'ERROR' { $PSStyle.Foreground.Red }
+    }
+    $reset = $PSStyle.Reset
+
+    # Scrive sullo stream "Success" (Output)
+    $colored = "$color$formatted$reset"
+    Write-Output $colored
+
+    if ($script:LogToFile) {
+        $dir = Split-Path -Parent $script:LogFilePath
+        if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir | Out-Null }
+        Add-Content -Path $script:LogFilePath -Value $formatted   # su file senza codici ANSI
+    }
+}
+
+function Write-Log {
+	param(
+        [Parameter(Mandatory=$true)]
+        [string]$Message,
+        [ValidateSet('DEBUG','INFO','WARN','ERROR')]
+        [string]$Level = 'INFO'
+    )
+	Write-LogWIthPSTyle $Message $Level
 }
 
 function Enable-LogToFile {
