@@ -1,23 +1,32 @@
 #!/bin/bash
+[[ "$DEBUG_BASH_MODULES" == true ]] && echo ">>> ENTER 2_mypythonenvironmentmanager.sh"
 
+if [[ -n "${MYPYTHON_LOADED:-}" ]]; then
+    [[ "$DEBUG_BASH_MODULES" == true ]] && echo ">>> 2_mypythonenvironmentmanager.sh skipped (already loaded)"
+    return
+fi
+export MYPYTHON_LOADED=1
 # ==============================================================================
 # Python Environment Manager (Bash Porting)
 # ==============================================================================
-$LOGGER_PATH="./mylogger.sh"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+LOGGER_PATH="$SCRIPT_DIR/1_mylogger.sh"
 # Check bash version
 if [[ ${BASH_VERSINFO[0]} -lt 4 ]]; then
     echo "Warning: This script require Bash 4.0 or higher."
+    return;
 fi
 
 # Using defined logger, if not found i will use a fallback function
 # Altrimenti definisco una funzione di fallback
 if ! command -v write_log &> /dev/null; then
     if [[ -f "$LOGGER_PATH" ]]; then
+        echo "$LOGGER_PATH"
         source "$LOGGER_PATH"
-        write_log "Logger module loaded successfully." "INFO"
+        #write_log "Logger module loaded successfully." "INFO"
     else
         write_log() { echo "[$2] $1"; }
-        write_log "Logger module NOT found: $LOGGER_PATH" "WARN"
+        #write_log "Logger module NOT found: $LOGGER_PATH" "WARN"
     fi
 fi
 
@@ -73,10 +82,12 @@ set_python_version() {
 create_python_venv() {
     local version=$1
     local name=$2
-
+    set_log_level "DEBUG"
+    debug "Passed version=$version, name=$name"
     if [[ -z "$version" ]]; then
         version=$(get_current_python_version)
     fi
+    debug "Now version is $version"
 
     if [[ -z "$name" ]]; then
         read -p "Name/Suffix for venv (Enter as default): " name
@@ -88,31 +99,72 @@ create_python_venv() {
     else
         venv_name=".venv_${version}"
     fi
+    debug "Now venv_name is $venv_name"
 
     if [[ ! -d "$venv_name" ]]; then
-        write_log "Creating venv: $venv_name..." "INFO"
-        "python$version" -m venv "$venv_name"
+        debug "Creating venv: $venv_name..."
+        python_bin=$(get_python_bin "python$version") || return 1
+        debug "python_bin resolved to: $python_bin"
+        if [[ -z "$python_bin" ]]; then
+            error "Python version $version not found. Cannot create venv."
+            return 1
+        fi
+        debug "Executing: $python_bin -m venv $venv_name"
+        "$python_bin" -m venv "$venv_name"
     fi
-    echo "$venv_name"
+    write_log "Venv created: $venv_name" "INFO"
 }
+
+get_python_bin() {
+    local python_bin="$1"
+
+    [[ -z "$python_bin" ]] && {
+        echo "Usage: find_python_and_print_version <python_executable_name>" >&2
+        return 1
+    }
+
+    # Estrae il prefisso (pythonX)
+    local base="${python_bin%%.*}"
+
+    # Estrae la versione completa dopo python
+    local version="${python_bin#python}"
+
+    # Genera i candidati in ordine di fallback
+    local candidates=(
+        "$python_bin"
+        "${base}.${version%.*}"
+        "$base"
+    )
+
+    for candidate in "${candidates[@]}"; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+
+    echo "No compatible python executable found for '$python_bin'" >&2
+    return 1
+}
+
 
 get_python_venv() {
     # Check for VSCode. Even if it is not standard in bash, we can test env variables
     if [[ "$TERM_PROGRAM" == "vscode" ]]; then
-        echo "vscode"
+        debug "Not available in vscode"
         return 2
     fi
 
-    local folders=($(ls -d .venv* 2>/dev/null))
+    folders=($(ls -d .venv* 2>/dev/null))
     
     if [[ ${#folders[@]} -eq 0 ]]; then
-        write_log "No venv found." "WARN"
+        debug "No venv found."
         return 1
     fi
-
-    echo -e "\nChoose the virtual environment:"
+    # ✅ MENU → STDERR
+    echo -e "\nI found available python virtual environment.\nChoose the virtual environment to activate:" >&2
     for i in "${!folders[@]}"; do
-        echo "$((i+1)). ${folders[$i]}"
+        echo "$((i+1)). ${folders[$i]}" >&2
     done
 
     read -p "Number (0 for exit, default 1): " sel
@@ -121,12 +173,22 @@ get_python_venv() {
 
     local idx=$((sel-1))
     if [[ $idx -ge 0 && $idx -lt ${#folders[@]} ]]; then
+        # ✅ VALORE → STDOUT
         echo "${folders[$idx]}"
         return 0
     fi
     return 1
 }
-
+disable_python_venv() {
+    if [[ -n "$VIRTUAL_ENV" ]]; then
+        deactivate 2>/dev/null || return 1
+        write_log "Virtual environment deactivated." "INFO"
+        return 0
+    else
+        write_log "No active virtual environment to deactivate." "WARN"
+        return 1
+    fi
+}
 enable_python_venv() {
     local folder=$1
     
@@ -177,9 +239,34 @@ enable_venv_and_jupyter() {
     fi
 }
 
+enable_venv_if_present(){
+    local venv=$(get_python_venv)
+    if [[ -n "$venv" ]]; then
+        enable_python_venv "$venv"
+        start_jupyter_lab "$venv"
+    fi
+}
+
+auto_enable_venv_if_present() {
+    # cerca venv senza input
+    local venv
+    venv=$(ls -d .venv* 2>/dev/null | head -n1) || return 0
+
+    # già attivo?
+    [[ "$VIRTUAL_ENV" == "$(pwd)/$venv" ]] && return 0
+
+    # attiva
+    local activate="$venv/bin/activate"
+    [[ -f "$activate" ]] || return 0
+
+    source "$activate" >/dev/null 2>&1
+}
+
 show_pem_help() {
     echo -e "\n--- Python Manager Module Help (BASH) ---"
     echo "enable_venv          : Sceglie/crea un venv e lo attiva."
     echo "enable_venv_and_jupyter : Attiva venv e avvia Jupyter."
     echo "set_python_version [v]   : Cambia la versione di Python attiva."
 }
+[[ "$DEBUG_BASH_MODULES" == true ]] && echo -e "\e[32m Loaded: Python Environment Manager module for Bash. Use 'show_pem_help' for usage instructions.\e[0m"
+[[ "$DEBUG_BASH_MODULES" == true ]] && echo "<<< EXIT 2_mypythonenvironmentmanager.sh"

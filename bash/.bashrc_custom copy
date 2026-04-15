@@ -1,17 +1,6 @@
 #!/bin/bash
-DEBUG_BASH_MODULES=false
-[[ "$DEBUG_BASH_MODULES" == true ]] && echo ">>> ENTER .bashrc_custom at $(date +%H:%M:%S) (PID=$$)"
-if [[ "$DEBUG_BASH_MODULES" == true ]]; then
-    echo ">>> Current environment variables (filtered):"
-    env | grep -E '^(MY|PATH|LOG|DEBUG|SHELL|USER|HOME)='
 
-    export PS4='+ ${BASH_SOURCE}:${LINENO}: '
-    set -x
-fi
-if [[ -n "${MY_BASHRC_CUSTOM_LOADED:-}" ]]; then
-    echo ">>> SKIP .bashrc_custom (guard triggered)"  
-    return
-fi
+[[ -n "${MY_BASHRC_CUSTOM_LOADED:-}" ]] && return
 export MY_BASHRC_CUSTOM_LOADED=1
 
 # ==============================================================================
@@ -34,8 +23,11 @@ MY_MODULES_LOADED=false
 
 # 3. Funzione Caricamento Moduli (Source di tutti i .sh nella cartella modules)
 load_my_modules() {
-    [[ "$MY_MODULES_LOADED" == true ]] && return
-   
+    
+    if [[ "$MY_MODULES_LOADED" == true ]]; then
+        return
+    fi
+    MY_MODULES_LOADED=true
     
     local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local modules_folder="$script_dir/my_modules"
@@ -43,22 +35,17 @@ load_my_modules() {
     echo -e "\e[36mLoading modules from: $modules_folder ...\e[0m"
 
     if [ -d "$modules_folder" ]; then
-        
-        # Load module in sorted order (if needed)        
-        while IFS= read -r -d '' module; do
-            echo -e "\e[35mLoading ... $module\e[0m"        
-            [[ "$DEBUG_BASH_MODULES" == true ]] && echo ">>> sourcing module: $module"
+        # Cerca tutti i file .sh ricorsivamente
+        for module in $(find "$modules_folder" -name "*.sh"); do
+            echo -e "\e[35mLoading ... $module)\e[0m"
             source "$module"
-            [[ "$DEBUG_BASH_MODULES" == true ]] && echo "<<< sourced module:  $module"
-
-        done < <(find "$modules_folder" -name "*.sh" -print0 | sort -z)
-
+        done
         
         # Risoluzione ricorsiva del PATH (usando la funzione convertita in precedenza)
         #if command -v resolve_and_export &> /dev/null; then
         #    #resolve_and_export "PATH"
         #fi
-        MY_MODULES_LOADED=true
+        
         return 0
     else
         echo -e "\e[33mFolder not found: $modules_folder\e[0m"
@@ -74,7 +61,7 @@ unload_my_modules() {
 
 # Esecuzione caricamento all'avvio
 load_my_modules
-echo -e "\e[36mModules loaded ...\e[0m"
+echo "modules loaded"
 
 # 5. Gestione del Cambio Directory (L'equivalente del tuo override di Set-Location)
 # In Bash usiamo PROMPT_COMMAND che viene eseguito ogni volta prima di mostrare il prompt
@@ -88,9 +75,9 @@ directory_watcher() {
         
         # Se i moduli sono carichi, esegui il check del Venv/Jupyter
         if [ "$MY_MODULES_LOADED" = true ]; then
-            if command -v enable_venv_if_present &> /dev/null; then
+            if command -v auto_enable_venv_if_present &> /dev/null; then
                 # Eseguiamo in background o silenziosamente per non bloccare la shell
-                enable_venv_if_present
+                auto_enable_venv_if_present
             fi
         fi
     fi
@@ -103,4 +90,3 @@ export PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\
 
 # PROMPT_COMMAND esegue la funzione directory_watcher a ogni invio
 export PROMPT_COMMAND="directory_watcher"
-[[ "$DEBUG_BASH_MODULES" == true ]] && echo "<<< EXIT  .bashrc_custom at $(date +%H:%M:%S) (PID=$$)"

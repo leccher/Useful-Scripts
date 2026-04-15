@@ -1,12 +1,17 @@
 #!/bin/bash
+[[ "$DEBUG_BASH_MODULES" == true ]] && echo ">>> ENTER 3_myresolverecursiveenvvar.sh"
+
+if [[ -n "${MYENVMANAGER_LOADED:-}" ]]; then
+    [[ "$DEBUG_BASH_MODULES" == true ]] && echo ">>> 3_myresolverecursiveenvvar.sh skipped (already loaded)"
+    return
+fi
+export MYENVMANAGER_LOADED=1
 # Using defined logger, if not found i will use a fallback function
 if ! command -v write_log &> /dev/null; then
     if [[ -f "$LOGGER_PATH" ]]; then
         source "$LOGGER_PATH"
-        write_log "Logger module loaded successfully." "INFO"
     else
         write_log() { echo "[$2] $1"; }
-        write_log "Logger module NOT found: $LOGGER_PATH" "WARN"
     fi
 fi
 
@@ -16,8 +21,6 @@ resolve_variable_recursive() {
     local var_name="$1"
     local current_value
     
-    write_log "Analyzing variable: $var_name" "DEBUG"
-
     # Get environment variable value
     # We use indirect expansion ${!var} to retrieve the value from the name
     current_value="${!var_name}"
@@ -64,3 +67,6 @@ resolve_and_export() {
         write_log "Failed to resolve '$var_name'." "WARN"
     fi
 }
+
+[[ "$DEBUG_BASH_MODULES" == true ]] && echo -e "\e[32m Loaded: My Recursive Environment Variable Resolver module for Bash.\e[0m"
+[[ "$DEBUG_BASH_MODULES" == true ]] && echo "<<< EXIT 3_myresolverecursiveenvvar.sh"
