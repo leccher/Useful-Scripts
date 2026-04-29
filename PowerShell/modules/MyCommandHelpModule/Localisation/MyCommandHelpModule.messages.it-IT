@@ -1,0 +1,4 @@
+@{
+    HELP_NOT_FOUND = "Help non trovato per '{0}'."
+    HELP_NOT_FOUND_FOR_MODULE = "Documentazione non trovata per il modulo '{0}'."
+}

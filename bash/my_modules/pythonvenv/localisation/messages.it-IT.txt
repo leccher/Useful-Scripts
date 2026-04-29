@@ -1,0 +1,6 @@
+python_already_set=La versione Python %s è già attiva.
+python_not_found=Versione Python %s non trovata.
+venv_created=Virtualenv creato: %s
+venv_enabled=Virtualenv attivato: %s
+no_venv_found=Nessun virtualenv trovato.
+choose_venv=Sono stati trovati dei virtualenv Python. Scegline uno:

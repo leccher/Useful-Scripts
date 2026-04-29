@@ -29,77 +29,87 @@ if [[ :$PATH: != *:"$MY_SCRIPTS":* ]]; then
     export PATH="$PATH:$MY_SCRIPTS"
 fi
 
-# Variabile di stato
-MY_MODULES_LOADED=false
-
 # 3. Funzione Caricamento Moduli (Source di tutti i .sh nella cartella modules)
 load_my_modules() {
-    [[ "$MY_MODULES_LOADED" == true ]] && return
-   
-    
-    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    local modules_folder="$script_dir/my_modules"
-    
-    echo -e "\e[36mLoading modules from: $modules_folder ...\e[0m"
+    [[ -v MY_CUSTOM_MODULES ]] && return 0
+    declare -ag MY_CUSTOM_MODULES=()
 
-    if [ -d "$modules_folder" ]; then
-        
-        # Load module in sorted order (if needed)        
-        while IFS= read -r -d '' module; do
-            echo -e "\e[35mLoading ... $module\e[0m"        
-            [[ "$DEBUG_BASH_MODULES" == true ]] && echo ">>> sourcing module: $module"
-            source "$module"
-            [[ "$DEBUG_BASH_MODULES" == true ]] && echo "<<< sourced module:  $module"
+    local script_dir modules_root
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    modules_root="$script_dir/my_modules"
 
-        done < <(find "$modules_folder" -name "*.sh" -print0 | sort -z)
+    [[ ! -d "$modules_root" ]] && return 1
 
-        
-        # Risoluzione ricorsiva del PATH (usando la funzione convertita in precedenza)
-        #if command -v resolve_and_export &> /dev/null; then
-        #    #resolve_and_export "PATH"
-        #fi
-        MY_MODULES_LOADED=true
-        return 0
-    else
-        echo -e "\e[33mFolder not found: $modules_folder\e[0m"
-        return 1
-    fi
+    while IFS= read -r -d '' module_dir; do
+        local main_file
+        main_file="$(find "$module_dir" -maxdepth 1 -name "*_module.sh" | head -n 1)"
+
+        [[ -z "$main_file" ]] && continue
+
+        source "$main_file"
+        MY_CUSTOM_MODULES+=("$(basename "$module_dir")")
+
+    done < <(find "$modules_root" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+
+    export MY_MODULES_LOADED=true
 }
 
 # 4. Funzione Scaricamento (In Bash basta 'unset' le funzioni, ma è meno comune)
 unload_my_modules() {
     echo -e "\e[33mNote: In Bash, unloading requires manual unsetting of functions.\e[0m"
-    MY_MODULES_LOADED=false
+    unset MY_CUSTOM_MODULES
 }
 
 # Esecuzione caricamento all'avvio
 load_my_modules
 echo -e "\e[36mModules loaded ...\e[0m"
 
+# Using defined logger, if not found i will use a fallback function
+if ! command -v write_log &> /dev/null; then
+    write_log() { echo "[$2] $1" >&2; }
+    debug() { write_log "$*" DEBUG; }
+    info()  { write_log "$*" INFO; }
+    warn()  { write_log "$*" WARN; }
+    error() { write_log "$*" ERROR; }
+fi
+
+
 # 5. Gestione del Cambio Directory (L'equivalente del tuo override di Set-Location)
 # In Bash usiamo PROMPT_COMMAND che viene eseguito ogni volta prima di mostrare il prompt
 last_pwd=$(pwd)
 
+# This function will be called on every prompt, we check if the directory has changed 
+# and if so we execute the moduleids::module_directory_watcher if defined
 directory_watcher() {
     local current_pwd=$(pwd)
     
     if [ "$current_pwd" != "$last_pwd" ]; then
         last_pwd=$current_pwd
         
-        # Se i moduli sono carichi, esegui il check del Venv/Jupyter
-        if [ "$MY_MODULES_LOADED" = true ]; then
-            if command -v enable_venv_if_present &> /dev/null; then
-                # Eseguiamo in background o silenziosamente per non bloccare la shell
-                enable_venv_if_present
-            fi
+        # Se i moduli sono stati caricati, esegui il check del Venv/Jupyter
+        # Esegue modul_directory_watcher se definita, altrimenti esegue direttamente enable_venv_if_present se definita
+        if [ -v MY_CUSTOM_MODULES ]; then
+            for fn in $(declare -F | awk '{print $3}'); do
+                if [[ "$fn" == *"::module_directory_watcher" ]]; then
+                    "$fn"
+                fi
+            done
+
         fi
+
+        #if [ -v MY_CUSTOM_MODULES ]; then
+        #    if command -v enable_venv_if_present &> /dev/null; then
+        #        # Eseguiamo in background o silenziosamente per non bloccare la shell
+        #        enable_venv_if_present
+        #    fi
+        #fi
     fi
 }
 
 # 6. Definizione del Prompt
 # PS1 definisce l'aspetto visivo
 # export PS1="\[\e[36m\]PS \w> \[\e[0m\]"
-export PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$"
+export PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "
 
 # PROMPT_COMMAND esegue la funzione directory_watcher a ogni invio
 export PROMPT_COMMAND="directory_watcher"

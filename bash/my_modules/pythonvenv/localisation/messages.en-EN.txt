@@ -1,0 +1,8 @@
+python_already_set=Python version %s is already active.
+python_not_found=Python version %s not found.
+venv_created=Virtualenv created: %s
+venv_enabled=Virtualenv enabled: %s
+no_venv_found=No virtualenv found.
+choose_venv=Available Python virtual environments. Choose one:
+module_skipped_by_flag=>>> mypythonvenv module skipped (disabled by flag)
+module_start_code=>>> ENTER mypythonvenv module
