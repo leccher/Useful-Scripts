@@ -1,6 +1,46 @@
-python_already_set=La versione Python %s è già attiva.
-python_not_found=Versione Python %s non trovata.
-venv_created=Virtualenv creato: %s
-venv_enabled=Virtualenv attivato: %s
-no_venv_found=Nessun virtualenv trovato.
-choose_venv=Sono stati trovati dei virtualenv Python. Scegline uno:
+# Ciclo di vita del modulo
+mypythonenvironmentmanager_module_enter=Entrata nel modulo MyPythonEnvironmentManager.
+mypythonenvironmentmanager_module_skipped=Modulo MyPythonEnvironmentManager disabilitato.
+mypythonenvironmentmanager_module_already_loaded=Madulo MyPythonEnvironmentManager già caricato.
+mypythonenvironmentmanager_module_loaded=Modulo MyPythonEnvironmentManager caricato correttamente.
+mypythonenvironmentmanager_module_exit=Uscita dal modulo MyPythonEnvironmentManager.
+
+# Errori generali
+module_require_bash_4=Questo modulo richiede Bash 4.0 o superiore.
+python_version_not_determined=Impossibile determinare la versione Python corrente.
+
+# Gestione versione Python
+python_already_setted=La versione Python '%s' è già attiva.
+python_switched=Passaggio a %s completato.
+python_not_found=Versione Python '%s' non trovata.
+python_version_not_found=Versione Python '%s' non trovata.
+
+# Creazione virtual environment
+create_python_venv=Creazione virtual environment (versione=%s, nome=%s).
+python_current_version=Versione Python corrente: %s.
+venv_name_prompt=Nome/Suffisso per il virtual environment (Invio per il valore predefinito): [.venv]
+venv_name_resolved=Nome del virtual environment determinato: %s.
+creating_venv=Creazione del virtual environment: %s.
+python_bin_resolved=Eseguibile Python individuato: %s.
+executing_venv_creation=Esecuzione comando: %s.
+venv_created=Virtual environment creato: %s.
+
+# Ricerca eseguibile Python
+python_bin_argument_required=Utilizzo: get_python_bin <nome_eseguibile_python>.
+python_executable_not_found=Nessun eseguibile Python compatibile trovato per '%s'.
+
+# Ricerca e selezione virtual environment
+no_venv_found=Nessun virtual environment trovato.
+choose_venv_one_venv_found=È stato trovato un virtual environment: %s.
+choose_venv_one_venv_found_prompt=Utilizzare il virtual environment '%s'? (y/n):
+choose_venv_found_prompt=Virtual environment disponibili:
+choose_venv_found_prompt_version=Versione Python corrente: %s. Selezionare un virtual environment (0 per annullare):
+
+# Attivazione virtual environment
+venv_enabled=Virtual environment attivato: %s.
+activate_script_not_found=Script di attivazione del virtual environment non trovato.
+no_venv_found_or_created=Nessun virtual environment trovato o creato. Impossibile attivarlo.
+
+# Disattivazione virtual environment
+venv_deactivated=Virtual environment disattivato.
+no_venv_to_deactivate=Nessun virtual environment attivo da disattivare.

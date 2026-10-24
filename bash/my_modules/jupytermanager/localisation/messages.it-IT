@@ -1,0 +1,14 @@
+jupyter_module_enter=Entrata nel modulo MyJupyterManager.
+jupyter_module_skipped=Modulo MyJupyterManager disabilitato.
+jupyter_module_already_loaded=Modulo MyJupyterManager già caricato.
+bash_version_error=Questo modulo richiede Bash 4.0 o superiore.
+
+start_jupyter_lab_prompt=Avviare Jupyter Lab? (s/n):
+
+jupyter_installed=Jupyter Lab è già installato nel virtual environment attivo.
+jupyter_install_failed=Installazione di Jupyter Lab non riuscita. Verificare la configurazione di pip e riprovare.
+jupyter_install_success=Jupyter Lab installato correttamente nel virtual environment attivo.
+jupyter_no_active_venv=Nessun virtual environment attivo. Attivare o selezionare un virtual environment prima di continuare.
+
+jupyter_module_loaded=Modulo MyJupyterManager caricato correttamente.
+jupyter_module_exit=Uscita dal modulo MyJupyterManager.

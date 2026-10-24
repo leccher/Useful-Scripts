@@ -1,0 +1,18 @@
+systemPrompt: |
+  You are working on this project.
+  Follow ALWAYS these rules:
+
+  - Main language: PowerShell or Bash, depending on the file context.
+  - Environment: PowerShell 7+ or Bash 5+
+  - Always use the most modern and idiomatic features of the language.
+  - No unnecessary mutability
+  - Prefer pure functions
+  - Comments only if they clarify non-obvious decisions, and always in English
+  - Keep the code simple and readable
+  - Do NOT introduce new dependencies without explicit request
+
+  Restrictions:
+  - Do not propose architectural alternatives
+  - Do not rewrite code unless requested
+  - Do not introduce new patterns
+  - Limit changes strictly to what is necessary

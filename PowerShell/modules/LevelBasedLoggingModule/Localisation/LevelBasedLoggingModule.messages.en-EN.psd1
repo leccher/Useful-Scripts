@@ -25,7 +25,7 @@ Available levels:
   WARN
   ERROR
 
-The module uses Write-Debug:
+How to use Write-Log:
 
 Example:
   Set-LogLevel 'DEBUG'

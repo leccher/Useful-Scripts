@@ -1,0 +1,25 @@
+# Module lifecycle
+mysdkman_module_enter=Entering MySDKMAN module.
+mysdkman_module_skipped=MySDKMAN module disabled.
+mysdkman_module_already_loaded=MySDKMAN module already loaded.
+mysdkman_module_loaded=MySDKMAN module loaded successfully.
+mysdkman_module_exit=Leaving MySDKMAN module.
+
+# SDKMAN installation
+sdkman_not_found_prompt=SDKMAN was not found. Install it now? (y/n):
+sdkman_not_found_error=SDKMAN is required but was not installed.
+sdkman_installing=Installing SDKMAN...
+
+# zip dependency
+sdkman_zip_not_found_prompt=zip was not found. Install it now? If not, sdk installation is not possible (y/n):
+sdkman_zip_not_found_error=zip is required to install and run SDKMAN.
+sdkman_zip_installing=Installing zip...
+
+# unzip dependency
+sdkman_unzip_not_found_prompt=unzip was not found. Install it now? If not, sdk installation is not possible (y/n):
+sdkman_unzip_not_found_error=unzip is required to install and run SDKMAN.
+sdkman_unzip_installing=Installing unzip...
+
+# Directory watcher
+sdkman_env_detected=.sdkmanrc detected. Applying SDKMAN environment.
+sdkman_env_activated=SDKMAN environment activated.

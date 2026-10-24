@@ -15,14 +15,6 @@ Please start pwsh instead of Windows PowerShell 5.1.
 # ---- Module variables and functions -------------------------------------------------
 $script:MODULE_NAME = "MyEnvironmentManagerModule"
 $script:MODULE_CODE = "MEM"
-function Get-ModuleName() {
-    return $script:MODULE_NAME
-}
-
-function Get-ModuleCode() {
-    return $script:MODULE_CODE
-}
-
 $script:DebugEnabled = $false
 
 function Set-MEMDebugEnabled {

@@ -1,0 +1,28 @@
+#!/bin/bash
+C_RESET='\e[0m'
+C_CYAN='\e[36m'
+C_GREEN='\e[32m'
+C_YELLOW='\e[33m'
+C_RED='\e[31m'
+
+is_debug () {
+    [[ "$DEBUG_BASH_MODULES" == true ]]
+}
+is_debug
+
+# Debugging and logging functions
+echo_debug() {
+    is_debug && echo -e "${C_CYAN}[DEBUG]${C_RESET} $*"
+}
+
+echo_info() {
+    echo -e "${C_GREEN}[INFO ] ${C_RESET} $*"
+}
+
+echo_error() {
+    echo -e "${C_RED}[ERROR] ${C_RESET} $*" >&2
+}
+
+echo_warn() {
+    echo -e "${C_YELLOW}[WARN ] ${C_RESET} $*"
+}

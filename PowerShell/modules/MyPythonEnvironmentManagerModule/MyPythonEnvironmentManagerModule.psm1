@@ -1,7 +1,9 @@
+#!/bin/bash
 # ==============================================================================
 # Module: PEM (Python Environment Manager Module)
 # Require: PowerShell 7.0+
 # ==============================================================================
+
 # ---- PowerShell version check -------------------------------------------------
 $IsPS7 = $PSVersionTable.PSEdition -eq 'Core' -and
          $PSVersionTable.PSVersion.Major -ge 7
@@ -16,14 +18,6 @@ Please start pwsh instead of Windows PowerShell 5.1.
 # ---- Module variables and functions -------------------------------------------------
 $script:MODULE_NAME = "MyPythonEnvironmentManagerModule"
 $script:MODULE_CODE = "PEM"
-function Get-ModuleName() {
-    return $script:MODULE_NAME
-}
-
-function Get-ModuleCode() {
-    return $script:MODULE_CODE
-}
-
 $script:DebugEnabled = $false
 
 function Set-PEMDebugEnabled {
@@ -419,8 +413,6 @@ function Create-PythonVenv {
 #>
 
 function Get-PythonVenv {
-    if ($Env:TERM_PROGRAM -eq "vscode") { return @{ Code = 1; Value = "vscode" } }
-
     $folders = Get-ChildItem -Directory -Filter ".venv*"
     if (-not $folders) { return @{ Code = -1; Message = (Get-LocalizedMessage -Messages $script:MESSAGES -Id VENV_NOT_FOUND) } }
 

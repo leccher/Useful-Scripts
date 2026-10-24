@@ -1,0 +1,17 @@
+# Personal Shell Modules
+
+This repository contains my personal Bash and PowerShell modules
+used to extend interactive shell sessions with common functionality:
+- logging
+- internationalization
+- environment and Python management
+- developer utilities
+
+## Supported environments
+- Bash (Linux / WSL)
+- PowerShell 7+
+
+## Structure
+- bash/        → Bash modules and configuration
+- powershell/  → PowerShell modules and profile scripts
+- autohotkey/  → Windows automation

@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Init Continue Config",
+      "type": "shell",
+      "command": "mkdir -p .continue && cat << 'EOF' > .continue/config.yaml\nsystemPrompt: |\n  You are working on this project.\n  Follow ALWAYS these rules:\n\n  - Main language: PowerShell or Bash, depending on the file context.\n  - Environment: PowerShell 7+ or Bash 5+\n  - Always use the most modern and idiomatic features of the language.\n  - No unnecessary mutability\n  - Prefer pure functions\n  - Comments only if they clarify non-obvious decisions, and always in English\n  - Keep the code simple and readable\n  - Do NOT introduce new dependencies without explicit request\n\n  Restrictions:\n  - Do not propose architectural alternatives\n  - Do not rewrite code unless requested\n  - Do not introduce new patterns\n  - Limit changes strictly to what is necessary\nEOF\n",
+      "problemMatcher": []
+    }
+  ]
+}

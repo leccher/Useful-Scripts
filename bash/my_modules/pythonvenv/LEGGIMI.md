@@ -8,11 +8,64 @@
 - il cambio di versione Python
 - la creazione e l'attivazione di virtual environment
 - l'attivazione automatica dei virtual environment in base alla directory
-- l'integrazione con Jupyter Lab
 
 Il modulo è pensato per essere caricato dinamicamente tramite `source` e per integrarsi in ecosistemi Bash modulari.
 
 Compatibile con **Bash 4+**.
+
+---
+
+## Funzionalità principali
+
+- Cambio della versione Python attiva
+- Creazione di virtual environment Python (`venv`)
+- Attivazione e disattivazione dei virtual environment
+- Ricerca automatica dei virtual environment nella directory corrente
+- Attivazione automatica tramite directory watcher
+- Supporto alla localizzazione tramite il modulo `MyLogger`
+- Menu interattivo per la selezione del virtual environment
+- Compatibilità con framework Bash modulari
+
+---
+
+## Stream di Output
+
+Questo modulo segue la stessa separazione stdout/stderr utilizzata da MyLogger.
+
+Le funzioni che restituiscono un valore scrivono il risultato su `stdout`, mentre i messaggi di log vengono inviati a `stderr`.
+
+Esempi:
+
+```bash
+version=$(get_python_version)
+venv=$(get_python_venv)
+python_bin=$(get_python_bin python3.12)
+```
+
+Questo consente di utilizzare le command substitution senza che i messaggi di log interferiscano con i valori restituiti.
+
+Convenzioni utilizzate:
+
+- stdout: risultati delle funzioni e output utilizzabile da altri script
+- stderr: messaggi DEBUG, INFO, WARN ed ERROR
+
+---
+
+## Codici di ritorno
+
+| Codice | Descrizione |
+|---------|-------------|
+| `0` | Successo |
+| `1` | Errore non bloccante (ad esempio annullamento da parte dell'utente) |
+| `2` | Modulo disabilitato |
+| `3` | Modulo già caricato |
+| `4` | Nessun virtual environment trovato |
+| `11` | Versione Python richiesta non trovata |
+| `12` | Impossibile determinare la versione Python corrente |
+| `13` | Nessun eseguibile Python compatibile trovato |
+| `14` | Script di attivazione del virtual environment non trovato |
+| `15` | Versione di Bash inferiore alla 4 |
+| `99` | Argomento non valido |
 
 ---
 
@@ -29,17 +82,6 @@ Per abilitare messaggi di debug durante il caricamento:
 ```bash
 export DEBUG_BASH_MODULES=true
 ```
-
----
-
-## Funzionalità principali
-
-- Cambio versione Python disponibile sul sistema
-- Creazione di virtual environment Python (`venv`)
-- Attivazione/disattivazione dei venv
-- Attivazione automatica del venv al cambio directory
-- Integrazione opzionale con Jupyter Lab
-- Logging integrato tramite modulo `mylogger`
 
 ---
 
@@ -68,6 +110,12 @@ Risultato:
 .venv_3.10_myproject/
 ```
 
+Se il nome non viene specificato, verrà richiesto all'utente oppure verrà creato un ambiente con il formato:
+
+```Plain Text
+.venv_<versione>
+```
+
 ### Attivare un virtual environment
 
 ```bash
@@ -86,7 +134,7 @@ disable_python_venv
 
 ## Attivazione automatica
 
-Il modulo espone una funzione watcher per l'attivazione automatica del venv:
+Il modulo espone un hook richiamabile dai watcher di cambio directory:
 
 ```bash
 mypem::module_directory_watcher
@@ -94,21 +142,12 @@ mypem::module_directory_watcher
 
 Questa funzione può essere richiamata automaticamente da `.bashrc` o script di cambio directory.
 
----
+Il comportamento è il seguente:
 
-## Integrazione Jupyter Lab
-
-```bash
-enable_venv_and_jupyter
-```
-
-Oppure:
-
-```bash
-enable_venv_if_present
-```
-
-Avvia Jupyter Lab se disponibile nel venv attivo.
+- se viene trovato un virtual environment compatibile, viene proposto o attivato
+- se sono presenti più virtual environment, viene mostrato un menu di selezione
+- se non è presente alcun virtual environment, la directory viene ignorata
+- il watcher non crea automaticamente nuovi virtual environment
 
 ---
 
@@ -128,14 +167,20 @@ Avvia Jupyter Lab se disponibile nel venv attivo.
 - Python 3 installato sul sistema
 - Modulo `mylogger` opzionale
 
+In modalità standalone il modulo fornisce implementazioni di fallback per le funzioni di logging e localizzazione. Quando disponibile, l'integrazione con `MyLogger` offre funzionalità avanzate di logging e i18n.
+
 ---
 
 ## Note di progettazione
 
-- Nessuna dipendenza esterna obbligatoria
-- Logging resiliente con fallback automatico
-- Compatibilità con VSCode e shell interattive
+- Compatibile con framework Bash modulari
+- Può essere utilizzato anche in modalità standalone
+- Utilizza stdout per i valori restituiti e stderr per i messaggi di log
+- Supporta il caricamento multiplo sicuro (idempotenza)
 - Nessuna modifica permanente al sistema
+- Rilevamento automatico dei virtual environment nella directory corrente
+- Le directory che non contengono virtual environment vengono ignorate automaticamente
+- Supporto alla localizzazione tramite risoluzione i18n
 
 ---
 

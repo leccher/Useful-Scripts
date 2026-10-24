@@ -1,0 +1,25 @@
+# Ciclo di vita del modulo
+mysdkman_module_enter=Entrata nel modulo MySDKMAN.
+mysdkman_module_skipped=Modulo MySDKMAN disabilitato.
+mysdkman_module_already_loaded=Modulo MySDKMAN già caricato.
+mysdkman_module_loaded=Modulo MySDKMAN caricato correttamente.
+mysdkman_module_exit=Uscita dal modulo MySDKMAN.
+
+# Installazione SDKMAN
+sdkman_not_found_prompt=SDKMAN non è installato. Vuoi installarlo ora? (y/n):
+sdkman_not_found_error=SDKMAN è richiesto ma non è stato installato.
+sdkman_installing=Installazione di SDKMAN in corso...
+
+# Dipendenza zip
+sdkman_zip_not_found_prompt=zip non è installato. Vuoi installarlo ora? (y/n):
+sdkman_zip_not_found_error=zip è necessario per installare ed utilizzare SDKMAN.
+sdkman_zip_installing=Installazione di zip in corso...
+
+# Dipendenza unzip
+sdkman_unzip_not_found_prompt=unzip non è installato. Vuoi installarlo ora? (y/n):
+sdkman_unzip_not_found_error=unzip è necessario per installare ed utilizzare SDKMAN.
+sdkman_unzip_installing=Installazione di unzip in corso...
+
+# Directory watcher
+sdkman_env_detected=Trovato file .sdkmanrc. Applicazione dell'ambiente SDKMAN.
+sdkman_env_activated=Ambiente SDKMAN attivato.

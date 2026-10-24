@@ -2,9 +2,11 @@
 
 ## Overview
 
-MyLogger is a lightweight, enterprise-grade Bash module designed to provide structured, colored, and configurable logging capabilities for complex or modular Bash scripts. The module is intended to be loaded via `source` and integrates seamlessly into larger automation frameworks or operational scripts.
+MyLogger is a lightweight Bash module designed to provide structured, colored, and configurable logging capabilities for complex or modular Bash scripts. The module is intended to be loaded via `source` and integrates seamlessly into larger automation frameworks or operational scripts.
 
 The module is built with robustness and maintainability in mind and supports idempotent loading, ensuring safe reuse across multiple script inclusions.
+
+The module can operate both as part of the My Bash framework and as a standalone component. When framework helper functions are not available, MyLogger automatically provides minimal fallback implementations required for its operation.
 
 Compatible with **Bash 4+**.
 
@@ -18,8 +20,45 @@ Compatible with **Bash 4+**.
 - Automatic detection of the calling function
 - Idempotent module loading to prevent redefinition
 - **Built-in lazy i18n support (key=value)** resolved at log time
+- Calling function identified automatically
 
 ---
+
+## Output Streams
+
+MyLogger always writes log messages to `stderr`.
+
+This design allows Bash functions to safely return data through
+`stdout` without log messages contaminating command substitutions.
+
+Example:
+
+```bash
+version=$(get_current_python_version)
+venv=$(get_python_venv)
+python_bin=$(get_python_bin python3.12)
+```
+
+Even when DEBUG, INFO, WARN or ERROR messages are emitted, the captured variables contain only the intended function output.
+
+Conventions used by this framework:
+
+- stdout : function results and machine-readable output
+- stderr : DEBUG, INFO, WARN and ERROR messages
+
+---
+
+## Return codes
+
+| Codice | Significato |
+|---------|------------|
+| 0 | Success |
+| 1 | Log level too low (message not logged) |
+| 2 | Module skipped (disabled by flag) |
+| 11 | Invalid log level passed |
+| 12 | Error resolving current log level |
+
+Generally, codes over 10 are considered blocking errors
 
 ## Loading the Module
 
@@ -36,6 +75,8 @@ To enable debug messages during module loading, set the following environment va
 ```bash
 export DEBUG_BASH_MODULES=true
 ```
+
+When DEBUG_BASH_MODULES is set to true, the logger automatically switches to DEBUG level regardless of the configured MYLOGGER_LOG_LEVEL value.
 
 ---
 
@@ -77,13 +118,15 @@ set_log_level WARN
 ## Core Logging Function
 
 ```bash
-write_log "Your message or message_key" DEBUG
+write_log DEBUG "Your message or message_key"
+write_log INFO "Operation completed"
+write_log ERROR "File not found"
 ```
 
 Parameters:
 
-- Message text **or message key**
 - Log level (`ERROR`, `WARN`, `INFO`, `DEBUG`)
+- Message text **or message key**
 
 ---
 
@@ -158,11 +201,14 @@ warn "This is a custom raw message"
 
 ### Language Resolution
 
-The active language is resolved in the following order:
+Language resolution order:
 
-1. `MY_LANG` environment variable
-2. System `LANG` variable
-3. Fallback to `en-EN`
+1. MY_LANG
+2. LANG (without locale suffix, e.g. UTF-8)
+3. Language-specific catalog (messages.it-IT)
+4. Generic language catalog (messages.it)
+5. English catalog (messages.en-EN)
+6. Generic English catalog (messages.en)
 
 ---
 
@@ -222,23 +268,23 @@ disable_log_to_file
 
 ## Utility Function: Prompt
 
-The module also provides a simple input helper:
+The module also provides a simple input helper. The function returns user input through stdout.
 
 ```bash
-name=$(prompt "Enter your name: ")
+name=$(read_prompt "Enter your name: ")
+echo "Your name is $name"
 ```
 
 ---
 
-## Global Variables
+## Module Variables
 
 | Variable Name | Description |
 |--------------|-------------|
 | `MYLOGGER_LOG_LEVEL` | Current log level (default: INFO) |
 | `MYLOGGER_LOG_TO_FILE` | Enables/disables file logging |
 | `MYLOGGER_LOG_FILE_PATH` | Path to the log file |
-| `MYLOGGER_LOADED` | Internal module load guard flag |
-| `MY_LANG` | Active log language (optional) |
+| `MYLOGGER_LOADED` | Internal module load guard flag
 
 ---
 
@@ -254,9 +300,9 @@ enable_log_to_file "/tmp/app.log"
 
 my_function() {
     debug "starting"
-    info venv_enabled "/tmp/.venv"
+    info "THis is a in info"
     warn "Suboptimal condition detected"
-    error python_not_found "3.13"
+    error "Error found"
 }
 
 my_function
@@ -273,8 +319,6 @@ my_function
 
 ## Design Notes
 
-- Internationalization is handled internally by the logger
-- i18n is lazy and does not preload message catalogs
 - Missing keys are non-fatal and fall back to raw text
 - All log output is written to `stderr`
 - The module supports safe multiple inclusions

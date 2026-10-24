@@ -1,100 +1,224 @@
 #!/bin/bash
+## My Famework base loader script for my custom modules (BASH)
+## This script is intended to be sourced in your .bashrc or .bash_profile to load custom modules and set up the environment.
+## Use script add_my_bashrc.sh to add it to your .bashrc
+## Return codes:
+## - 0 : Success
+## - 1 : Error loading modules (e.g., missing directory)
+## - 2 : Module skipped (disabled by flag)
+## - 3 : Module already loaded
+## - 4 : Modules already loaded (guard triggered)
+## - 5 : Modules root directory not found
+
 DEBUG_BASH_MODULES=false
-[[ "$DEBUG_BASH_MODULES" == true ]] && echo ">>> ENTER .bashrc_custom at $(date +%H:%M:%S) (PID=$$)"
-if [[ "$DEBUG_BASH_MODULES" == true ]]; then
-    echo ">>> Current environment variables (filtered):"
+C_RESET='\e[0m'
+C_CYAN='\e[36m'
+C_GREEN='\e[32m'
+C_YELLOW='\e[33m'
+C_RED='\e[31m'
+
+is_debug () {
+    [[ "$DEBUG_BASH_MODULES" == true ]]
+}
+is_debug
+
+# Debugging and logging functions
+echo_debug() {
+    is_debug && echo -e "${C_CYAN}[E_DEBUG]${C_RESET} $*"
+}
+
+echo_info() {
+    echo -e "${C_GREEN}[E_INFO ] ${C_RESET} $*"
+}
+
+echo_error() {
+    echo -e "${C_RED}[E_ERROR] ${C_RESET} $*" >&2
+}
+
+echo_warn() {
+    echo -e "${C_YELLOW}[E_WARN ] ${C_RESET} $*"
+}
+
+echo_debug ">>> ENTER .bashrc_custom at $(date +%H:%M:%S) (PID=$$)"
+if is_debug; then
+    echo_debug ">>> Current environment variables (filtered):"
     env | grep -E '^(MY|PATH|LOG|DEBUG|SHELL|USER|HOME)='
 
     export PS4='+ ${BASH_SOURCE}:${LINENO}: '
-    set -x
+    #set -x
 fi
-if [[ -n "${MY_BASHRC_CUSTOM_LOADED:-}" ]]; then
-    echo ">>> SKIP .bashrc_custom (guard triggered)"  
-    return
-fi
-export MY_BASHRC_CUSTOM_LOADED=1
-
 # ==============================================================================
 # Bash Profile Configuration (Porting from PowerShell)
 # ==============================================================================
-# 1. Controllo Privilegi (Simile a IsInRole Administrator)
+# 1. Privileges Check (like a IsInRole Administrator)
 if [ "$EUID" -eq 0 ]; then
     # echo "Executing as ROOT"
-    return
+    return 1
 fi
 
-# 2. Configurazione PATH
+# 2. PATH Configuration
 export MY_SCRIPTS="$HOME/Scripts"
 if [[ :$PATH: != *:"$MY_SCRIPTS":* ]]; then
     export PATH="$PATH:$MY_SCRIPTS"
 fi
 
-# 3. Funzione Caricamento Moduli (Source di tutti i .sh nella cartella modules)
-load_my_modules() {
-    [[ -v MY_CUSTOM_MODULES ]] && return 0
-    declare -ag MY_CUSTOM_MODULES=()
+# 3. Modules loading function (sourceing all .sh files in 'modules' folder)
+declare -A MODULE_FILES
+declare -A MODULE_LOADING
+declare -A MODULE_LOADED
+load_single_module() {
 
+    local module_name="$1"
+
+    # Module already loaded
+    [[ "${MODULE_LOADED[$module_name]}" == "true" ]] && return 2
+
+    # Get main file for the module
+    local main_file="${MODULE_FILES[$module_name]}"
+
+    [[ ! -f "$main_file" ]] && {
+        echo_error "Module not found: $module_name"
+        return 1
+    }
+
+    if [[ "${MODULE_LOADING[$module_name]}" == "true" ]]; then
+        echo_error "Circular dependency detected for module: $module_name"
+        return 3
+    fi
+
+    MODULE_LOADING[$module_name]=true
+
+    local deps
+
+    deps=$(
+        grep '^#% MODULE_DEPENDENCIES=' "$main_file" \
+        | cut -d= -f2-
+    )
+
+    local dep
+    for dep in $deps; do
+        load_single_module "$dep" || return $?
+    done
+
+    source "$main_file"
+    local rc=$?
+    unset MODULE_LOADING["$module_name"]
+    if (( rc == 0 || rc == 3 )); then
+        MODULE_LOADED["$module_name"]=true
+        MY_CUSTOM_MODULES+=("$module_name")
+    else
+        echo_error "Error loading module: $main_file (rc=$rc)"
+        return $rc
+    fi
+}
+load_my_modules() {
+    [[ "${MY_MODULES_LOADED:-}" == "true" ]] && return 4
+    declare -ag MY_CUSTOM_MODULES=()
     local script_dir modules_root
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     modules_root="$script_dir/my_modules"
+    echo_debug "modules_root=$modules_root"
+    [[ ! -d "$modules_root" ]] && return 5
 
-    [[ ! -d "$modules_root" ]] && return 1
-
+    # Create modules map
     while IFS= read -r -d '' module_dir; do
+        echo_debug "Found dir: $module_dir"
         local main_file
         main_file="$(find "$module_dir" -maxdepth 1 -name "*_module.sh" | head -n 1)"
-
+        echo_debug "Main file: $main_file"
         [[ -z "$main_file" ]] && continue
 
-        source "$main_file"
-        MY_CUSTOM_MODULES+=("$(basename "$module_dir")")
+        # new way to load modules checking dependencies
+        MODULE_FILES["$(basename "$module_dir")"]="$main_file"
+
+        # old way to load modules without checking dependencies
+        #source "$main_file"
+        #local rc=$?
+
+        #echo_debug "source rc=$rc : $main_file"
+
+        #if (( rc == 0 )); then
+        #    MY_CUSTOM_MODULES+=("$(basename "$module_dir")")
+        #else
+        #    echo_error "Error loading module: $main_file (rc=$rc)"
+        #fi
 
     done < <(find "$modules_root" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+
+    # load mapped modules checking dependencies
+    local module
+
+    for module in "${!MODULE_FILES[@]}"; do
+        load_single_module "$module"
+    done
 
     export MY_MODULES_LOADED=true
 }
 
-# 4. Funzione Scaricamento (In Bash basta 'unset' le funzioni, ma è meno comune)
+# 4. Unloading modules function
 unload_my_modules() {
-    echo -e "\e[33mNote: In Bash, unloading requires manual unsetting of functions.\e[0m"
+    echo_debug "Note: In Bash, unloading requires manual unsetting of functions."
     unset MY_CUSTOM_MODULES
 }
 
-# Esecuzione caricamento all'avvio
-load_my_modules
-echo -e "\e[36mModules loaded ...\e[0m"
+# Startup loading
+if [[ -n "${MY_BASHRC_CUSTOM_LOADED:-}" ]]; then
+    echo_info ">>> SKIP .bashrc_custom (guard triggered)"  
+    return
+else
+    export MY_BASHRC_CUSTOM_LOADED=1
+    load_my_modules
+    echo_info "Modules loaded ..."
+    echo_debug "$(declare -p MY_CUSTOM_MODULES)"
+    # printf '%s\n' "${MY_CUSTOM_MODULES[@]}"
+fi
 
 # Using defined logger, if not found i will use a fallback function
-if ! command -v write_log &> /dev/null; then
-    write_log() { echo "[$2] $1" >&2; }
-    debug() { write_log "$*" DEBUG; }
-    info()  { write_log "$*" INFO; }
-    warn()  { write_log "$*" WARN; }
-    error() { write_log "$*" ERROR; }
+if ! declare -F write_log >/dev/null; then
+    write_log() {
+        local level="$1"
+        shift
+        echo "[$level] $*" >&2
+    }
+    debug() { write_log DEBUG "$@"; }
+    info()  { write_log INFO  "$@"; }
+    warn()  { write_log WARN  "$@"; }
+    error() { write_log ERROR "$@"; }
+    read_prompt() {
+        local prompt="${1:-}"
+        read -r -p "$prompt" response
+        printf '%s\n' "$response"
+    }
 fi
 
 
-# 5. Gestione del Cambio Directory (L'equivalente del tuo override di Set-Location)
-# In Bash usiamo PROMPT_COMMAND che viene eseguito ogni volta prima di mostrare il prompt
+# 5. Changing directory management (As your override of Set-Location in powershell)
+# In Bash we use PROMPT_COMMAND, which runs every time before the prompt is displayed
 last_pwd=$(pwd)
 
 # This function will be called on every prompt, we check if the directory has changed 
 # and if so we execute the moduleids::module_directory_watcher if defined
+declare -ag MY_DIRECTORY_WATCHERS=()
 directory_watcher() {
+    [[ -z "${last_pwd+x}" ]] && last_pwd="$(pwd)"
     local current_pwd=$(pwd)
     
     if [ "$current_pwd" != "$last_pwd" ]; then
         last_pwd=$current_pwd
         
-        # Se i moduli sono stati caricati, esegui il check del Venv/Jupyter
-        # Esegue modul_directory_watcher se definita, altrimenti esegue direttamente enable_venv_if_present se definita
-        if [ -v MY_CUSTOM_MODULES ]; then
-            for fn in $(declare -F | awk '{print $3}'); do
-                if [[ "$fn" == *"::module_directory_watcher" ]]; then
-                    "$fn"
-                fi
+        # If modules are loaded, run the Venv/Jupyter check
+        # Run module_directory_watcher if defined, otherwise run enable_venv_if_present directly if defined
+        if declare -p MY_CUSTOM_MODULES &>/dev/null; then
+            # Next lines list all modules funcitons
+            #for fn in $(declare -F | awk '{print $3}'); do
+            #    if [[ "$fn" == *"::module_directory_watcher" ]]; then
+            #        "$fn"
+            #    fi
+            #done
+            # Next lines search into MY_DIRECTORY_WATCHERS array for functions to call
+            for watcher in "${MY_DIRECTORY_WATCHERS[@]}"; do
+                "$watcher"
             done
-
         fi
 
         #if [ -v MY_CUSTOM_MODULES ]; then
@@ -106,11 +230,10 @@ directory_watcher() {
     fi
 }
 
-# 6. Definizione del Prompt
-# PS1 definisce l'aspetto visivo
+# 6. Prompt definition
 # export PS1="\[\e[36m\]PS \w> \[\e[0m\]"
 export PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "
 
 # PROMPT_COMMAND esegue la funzione directory_watcher a ogni invio
-export PROMPT_COMMAND="directory_watcher"
-[[ "$DEBUG_BASH_MODULES" == true ]] && echo "<<< EXIT  .bashrc_custom at $(date +%H:%M:%S) (PID=$$)"
+export PROMPT_COMMAND=directory_watcher
+echo_debug "<<< EXIT  .bashrc_custom at $(date +%H:%M:%S) (PID=$$)"
